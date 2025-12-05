@@ -1,0 +1,27 @@
+Q1. #0  syscall () at kernel/syscall.c:133
+    #1  0x0000000080001a90 in usertrap () at kernel/trap.c:68
+    #2  0x0000003ffffff09c in ?? ()
+  
+Q2. The value of register a7 is 15 and it represents the syscall number 15 (SYS_OPEN).
+    00000000000003c6 <open>:
+    .global open
+    open:
+    li a7, SYS_open
+    3c6:	48bd                	li	a7,15
+
+Q3. The sstatus value is 0x200000022. This leads to last 3 hex bits (022) being 0 0010 0010. 
+The 8th bit (0) tells us that previous mode was user mode.
+
+Q4.  Qemu output:
+    xv6 kernel is booting
+
+    hart 1 starting
+    hart 2 starting
+    scause=0xd sepc=0x80001cda stval=0x0
+    panic: kerneltrap
+Register used:A3
+
+Q5. The kernel attempts to access address 0 which isn't mapped in the kernel address space. This in turn causes a page
+fault (as shown by scause = 0xd, aka load page fault). The kernel panics as it can not handle this illegal mem address.
+
+Q6. The process was init with the pid as 1.
