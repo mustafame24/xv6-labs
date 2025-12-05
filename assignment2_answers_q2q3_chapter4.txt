@@ -1,0 +1,82 @@
+<<<<<<< HEAD
+Q2 and Q3 from end of Chapter 4 - Traps and System Calls
+Yaman Sibtain 28911
+
+----------------
+
+Q2) Is there a way to eliminate the special TRAPFRAME page mapping in every user address
+ space? For example, could uservec be modified to simply push the 32 user registers onto
+ the kernel stack, or store them in the proc structure?
+
+A2) The specialized TRAPFRAME page mapping, which stores the user process's
+ registers during a trap, is necessary because the RISC-V hardware does
+ not switch page tables when a trap occurs from user space. The initial
+ trap handler code, uservec, starts executing immediately using the user's
+ current page table. To safely save the 32 user registers to the process’s
+ dedicated trapframe structure in memory, the virtual address used for this
+ operation (TRAPFRAME or 0x3fffffe000) must resolve successfully within the active
+ user page table. If uservec were modified to push registers onto the kernel
+ stack or into the kernel's proc structure (which reside at high kernel
+ virtual addresses), these memory accesses would fail, as those kernel addresses
+ are typically not mapped in the user page table, leading to an exception or panic.
+ Thus, the TRAPFRAME dual mapping (shared by both user and kernel page tables) is
+ essential for saving state before the operating system can safely transition to its
+ full kernel environment.
+
+
+----------------
+
+Q3) Could xv6 be modified to eliminate the special TRAMPOLINE page mapping?
+
+A3) The TRAMPOLINE page is required because, like the TRAPFRAME, the trap handler's
+ entry point specified by stvec must be mapped in the user page table since the RISC-V
+ hardware does not switch page tables upon taking a trap. However, the need for this
+ specialized TRAMPOLINE mapping could theoretically be eliminated if the kernel were
+ modified to map all kernel memory into every user process's page table. This mapping would
+ need to be restricted from user access (by clearing the PTE_U flag), allowing the kernel's
+ trap entry point to execute immediately under the user page table without needing a dedicated
+ trampoline address space. xv6 avoids this design, however, specifically to enhance memory
+ isolation and reduce the potential for security vulnerabilities arising from
+ unintentional/accidental use of user pointers, opting instead for the less complex,
+=======
+Q2 and Q3 from end of Chapter 4 - Traps and System Calls
+Karam Hussain 27857
+
+----------------
+
+Q2) Is there a way to eliminate the special TRAPFRAME page mapping in every user address
+ space? For example, could uservec be modified to simply push the 32 user registers onto
+ the kernel stack, or store them in the proc structure?
+
+A2) The specialized TRAPFRAME page mapping, which stores the user process's
+ registers during a trap, is necessary because the RISC-V hardware does
+ not switch page tables when a trap occurs from user space. The initial
+ trap handler code, uservec, starts executing immediately using the user's
+ current page table. To safely save the 32 user registers to the process’s
+ dedicated trapframe structure in memory, the virtual address used for this
+ operation (TRAPFRAME or 0x3fffffe000) must resolve successfully within the active
+ user page table. If uservec were modified to push registers onto the kernel
+ stack or into the kernel's proc structure (which reside at high kernel
+ virtual addresses), these memory accesses would fail, as those kernel addresses
+ are typically not mapped in the user page table, leading to an exception or panic.
+ Thus, the TRAPFRAME dual mapping (shared by both user and kernel page tables) is
+ essential for saving state before the operating system can safely transition to its
+ full kernel environment.
+
+
+----------------
+
+Q3) Could xv6 be modified to eliminate the special TRAMPOLINE page mapping?
+
+A3) The TRAMPOLINE page is required because, like the TRAPFRAME, the trap handler's
+ entry point specified by stvec must be mapped in the user page table since the RISC-V
+ hardware does not switch page tables upon taking a trap. However, the need for this
+ specialized TRAMPOLINE mapping could theoretically be eliminated if the kernel were
+ modified to map all kernel memory into every user process's page table. This mapping would
+ need to be restricted from user access (by clearing the PTE_U flag), allowing the kernel's
+ trap entry point to execute immediately under the user page table without needing a dedicated
+ trampoline address space. xv6 avoids this design, however, specifically to enhance memory
+ isolation and reduce the potential for security vulnerabilities arising from
+ unintentional/accidental use of user pointers, opting instead for the less complex,
+>>>>>>> ba366b62bbd14390e3dd597b48535822e8c1372d
+ isolated solution using the dual-mapped TRAMPOLINE page.
