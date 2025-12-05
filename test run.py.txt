@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+import argparse,os,inspect,re,signal,subprocess,sys,time
+from subprocess import run
+
+p=argparse.ArgumentParser()
+p.add_argument('x');p.add_argument('-q',action='store_true')
+a=p.parse_args()
+
+class A:
+    def __init__(s,r=False):
+        if r:s.b();s.f()
+        s.p=subprocess.Popen(["make","qemu"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        s.o="";s.ob=bytearray();time.sleep(1)
+    def f(s):
+        try:run(["rm","fs.img"],check=True);run(["make","fs.img"],check=True)
+        except subprocess.CalledProcessError as e:print("fs fail",e.returncode)
+    def b(s):
+        try:run(["make","kernel/kernel"],check=True)
+        except subprocess.CalledProcessError as e:print("build fail",e.returncode)
+    def w(s,c):
+        if isinstance(c,str):c=c.encode()
+        s.p.stdin.write(c);s.p.stdin.flush()
+    def k(s):
+        ps=run(['ps','-opid','--no-headers','--ppid',str(s.p.pid)],stdout=subprocess.PIPE,encoding='utf8')
+        kids=[int(x)for x in ps.stdout.splitlines()]
+        if not kids:print("no qemu");os._exit(1)
+        os.kill(kids[0],signal.SIGKILL)
+    def z(s):s.p.terminate()
+    def r(s):
+        buf=os.read(s.p.stdout.fileno(),4096)
+        s.ob.extend(buf);s.o=s.ob.decode("utf-8","replace")
+    def l(s):return s.o.splitlines()
+    def e(s):
+        print("FAIL");s.z();sys.exit(1)
+    def m(s,*rs,ex=True):
+        L=s.l();last=-1
+        for i,v in enumerate(L):
+            if any(re.match(r,v)for r in rs):print(v);last=i
+        if last==-1 and ex:s.e()
+        return last>=0,(L[last] if last>=0 else "")
+    def mon(s,*rs,p="",t=60):
+        d=time.time()+t
+        while True:
+            time.sleep(1)
+            if time.time()>d:s.e()
+            s.r()
+            ok,_=s.m(*rs,ex=False)
+            if ok:return
+            ok,v=s.m(p,ex=False)
+            if ok:print(v)
+
+def t1():
+    q=A(True);q.w("logstress f0 f1 f2 f3 f4 f5\n");time.sleep(2);q.k();q.z()
+def t2():
+    q=A();time.sleep(2);q.r();ok,_=q.m('^recovering',ex=False)
+    if ok:q.w("ls\n");time.sleep(2);q.r();q.m('f5')
+    q.z();return ok
+def t3():
+    q=A(True);q.w("forphan\n");time.sleep(5);q.r();q.m('wait');q.k();q.z()
+def t4():
+    q=A(True);q.w("dorphan\n");time.sleep(5);q.r();q.m('wait');q.k();q.z()
+def t5():
+    q=A();time.sleep(2);q.r();q.m('^ireclaim');q.z()
+def T1():
+    print("log test")
+    for i in range(5):
+        t1();ok=t2()
+        if ok:print("OK");return
+        print("retry",i+1)
+    print("FAIL");sys.exit(1)
+def T2():print("orphan test");t3();t5();print("OK")
+def T3():print("orphan test");t4();t5();print("OK")
+def T4():T1();T2();T3()
+def T5(x=""):
+    tm=600;op=""
+    if a.q:op=" -q";tm=300
+    elif x:op+=" "+x
+    q=A(True);q.w("usertests"+op+"\n")
+    q.mon('^ALL TESTS PASSED',p='test',t=tm);q.z()
+def main():
+    r=r'%s'%a.x
+    fs=[(o,n)for n,o in inspect.getmembers(sys.modules[__name__]) if inspect.isfunction(o)and n.startswith('T')]
+    done=False
+    for f,n in fs:
+        if re.search(r,n):done=True;f()
+    if not done:T5(a.x)
+main()
