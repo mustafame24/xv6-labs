@@ -1,6 +1,5 @@
 <<<<<<< HEAD
 Q2 and Q3 from end of Chapter 4 - Traps and System Calls
-Yaman Sibtain 28911
 
 ----------------
 
@@ -40,7 +39,7 @@ A3) The TRAMPOLINE page is required because, like the TRAPFRAME, the trap handle
  unintentional/accidental use of user pointers, opting instead for the less complex,
 =======
 Q2 and Q3 from end of Chapter 4 - Traps and System Calls
-Karam Hussain 27857
+
 
 ----------------
 
